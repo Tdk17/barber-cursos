@@ -13,9 +13,54 @@ class Planescreen extends StatefulWidget {
 }
 
 class _PlanescreenState extends State<Planescreen> {
+  final _pageController = PageController(viewportFraction: 0.86);
+  int _pageIndex = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
+
+    // Ajuste do breakpoint: abaixo disso vira mobile (swipe)
+    final isMobile = size.width < 980;
+
+    final plans = <Widget>[
+      FlipPlanCard(
+        width: isMobile ? _cardW(size) : 290,
+        height: isMobile ? _cardH(size) : 490,
+        planType: PlanType.basico,
+        frontImage: 'assets/basico.png',
+        backImage: 'assets/fundoBasico.png',
+        planName: 'Plano Básico',
+        priceText: 'R\$ 19,90/mês',
+        onBuy: () => context.go('/home'),
+      ),
+      FlipPlanCard(
+        width: isMobile ? _cardW(size) : 280,
+        height: isMobile ? _cardH(size) : 490,
+        planType: PlanType.gold,
+        frontImage: 'assets/gold.png',
+        backImage: 'assets/fundoGold.png',
+        planName: 'Plano Gold',
+        priceText: 'R\$ 59,90/mês',
+        onBuy: () => context.go('/home'),
+      ),
+      FlipPlanCard(
+        width: isMobile ? _cardW(size) : 290,
+        height: isMobile ? _cardH(size) : 490,
+        planType: PlanType.platinum,
+        frontImage: 'assets/platinum.png',
+        backImage: 'assets/fundoPlatinum.png',
+        planName: 'Plano Platinum',
+        priceText: 'R\$ 199,90/mês',
+        onBuy: () => context.go('/home'),
+      ),
+    ];
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -36,55 +81,90 @@ class _PlanescreenState extends State<Planescreen> {
               ),
             ),
             const SizedBox(height: 18),
+
             Expanded(
               child: Center(
-                child: SizedBox(
-                  height: size.height * 0.90,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      FlipPlanCard(
-                        width: 290,
-                        height: 490,
-                        planType: PlanType.basico,
-                        frontImage: 'assets/basico.png',
-                        backImage: 'assets/fundoBasico.png',
-                        planName: 'Plano Básico',
-                        priceText: 'R\$ 19,90/mês',
-                        onBuy: () => context.go('/home'),
+                child: isMobile
+                    ? Column(
+                        children: [
+                          Expanded(
+                            child: PageView.builder(
+                              controller: _pageController,
+                              itemCount: plans.length,
+                              onPageChanged: (i) =>
+                                  setState(() => _pageIndex = i),
+                              itemBuilder: (context, i) =>
+                                  Center(child: plans[i]),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          _Dots(count: plans.length, index: _pageIndex),
+                          const SizedBox(height: 12),
+                        ],
+                      )
+                    : SizedBox(
+                        height: size.height * 0.90,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            plans[0],
+                            const SizedBox(width: 18),
+                            plans[1],
+                            const SizedBox(width: 18),
+                            plans[2],
+                          ],
+                        ),
                       ),
-                      const SizedBox(width: 18),
-                      FlipPlanCard(
-                        width: 280,
-                        height: 490,
-                        planType: PlanType.gold,
-                        frontImage: 'assets/gold.png',
-                        backImage: 'assets/fundoGold.png',
-                        planName: 'Plano Gold',
-                        priceText: 'R\$ 59,90/mês',
-                        onBuy: () => context.go('/home'),
-                      ),
-                      const SizedBox(width: 18),
-                      FlipPlanCard(
-                        width: 290,
-                        height: 490,
-                        planType: PlanType.platinum,
-                        frontImage: 'assets/platinum.png',
-                        backImage: 'assets/fundoPlatinum.png',
-                        planName: 'Plano Platinum',
-                        priceText: 'R\$ 199,90/mês',
-                        onBuy: () => context.go('/home'),
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ),
+
             const SizedBox(height: 16),
             const SizedBox(height: 14),
           ],
         ),
       ),
+    );
+  }
+
+  double _cardW(Size size) {
+    // card ocupa bem a tela mas com margem pro swipe
+    return (size.width * 0.86).clamp(260.0, 360.0);
+  }
+
+  double _cardH(Size size) {
+    // altura cabe em celulares menores
+    return (size.height * 0.62).clamp(430.0, 520.0);
+  }
+}
+
+/// ============================
+/// INDICADOR (bolinhas)
+/// ============================
+class _Dots extends StatelessWidget {
+  final int count;
+  final int index;
+
+  const _Dots({required this.count, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(count, (i) {
+        final active = i == index;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          margin: const EdgeInsets.symmetric(horizontal: 5),
+          width: active ? 18 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(99),
+            color: active
+                ? Colors.white.withOpacity(0.9)
+                : Colors.white.withOpacity(0.25),
+          ),
+        );
+      }),
     );
   }
 }
